@@ -3,7 +3,7 @@ package com.littlemonkey.web.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.littlemonkey.utils.reflection.ReflectionUtils2;
 import com.littlemonkey.web.annotation.Bind;
-import com.littlemonkey.web.annotation.Resource;
+import com.littlemonkey.web.annotation.Resources;
 import com.littlemonkey.web.common.ErrorCode;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
@@ -50,11 +50,11 @@ public abstract class BaseController {
         logger.info("request body: {}", body);
         try {
             if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
-                throw new NoSuchBeanDefinitionException("Resource don't exist.");
+                throw new NoSuchBeanDefinitionException("Resources don't exist.");
             }
             MethodDetail methodDetail = MethodCacheHolder.getTargetMethod(answer.getServiceName(), answer.getMethodName());
             if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
-                throw new NoSuchBeanDefinitionException("Resource don't exist.");
+                throw new NoSuchBeanDefinitionException("Resources don't exist.");
             }
             Bind bind = body.getClass().getAnnotation(Bind.class);
             MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
@@ -62,11 +62,11 @@ public abstract class BaseController {
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
-            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resource.class),
+            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class),
                     methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
             answer.setResult(result);
         } catch (NoSuchBeanDefinitionException e) {
-            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resource don't exist.");
+            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resources don't exist.");
         } catch (ApplicationException e) {
             throw e;
         } catch (Exception e) {
@@ -79,6 +79,11 @@ public abstract class BaseController {
         }
     }
 
+    /**
+     * <p>回调方法</p>
+     *
+     * @param answer
+     */
     protected void callBack(Answer answer) {
         HttpServletResponse response = CurrentHttpServletHolder.getCurrentResponse();
         if (answer.getResult() instanceof byte[]) {

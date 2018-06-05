@@ -67,7 +67,7 @@ public final class SpringContextHolder implements ApplicationContextAware {
     public static <T> T getBean(String beanName, Class<? extends Annotation> annotationType) {
         T t = (T) applicationContext.getBean(beanName);
         if (!t.getClass().isAnnotationPresent(annotationType)) {
-            throw new NoSuchBeanDefinitionException("Resource don't exist.");
+            throw new NoSuchBeanDefinitionException("Resources don't exist.");
         }
         return t;
     }
