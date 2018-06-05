@@ -3,8 +3,10 @@ package com.littlemonkey.web.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.littlemonkey.utils.reflection.ReflectionUtils2;
 import com.littlemonkey.web.annotation.Bind;
+import com.littlemonkey.web.common.ErrorCode;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
+import com.littlemonkey.web.exception.ApplicationException;
 import com.littlemonkey.web.method.MethodCacheHolder;
 import com.littlemonkey.web.method.MethodDetail;
 import com.littlemonkey.web.method.build.MethodBuildProvider;
@@ -49,7 +51,7 @@ public class BaseController {
             Assert.notNull(answer.getMethodName(), "methodName is null.");
             MethodDetail methodDetail = MethodCacheHolder.getTargetMethod(body.getServiceName(), body.getMethodName());
             if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
-                throw new NoSuchBeanDefinitionException("");
+                throw new NoSuchBeanDefinitionException("Resources don't exist.");
             }
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             Bind bind = body.getClass().getAnnotation(Bind.class);
@@ -60,11 +62,18 @@ public class BaseController {
                     params, methodDetail.getParameterTypes());
             answer.setResult(result);
         } catch (NoSuchBeanDefinitionException e) {
-
-        } catch (Exception e) {
+            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resources don't exist.");
+        } catch (ApplicationException e) {
             throw e;
+        } catch (Exception e) {
+            throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Internal server error.");
+        } finally {
+            try {
+                this.callBack(answer);
+            } catch (Exception e) {
+                throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Server response error.");
+            }
         }
-        this.callBack(answer);
     }
 
     protected void callBack(Answer answer) {
