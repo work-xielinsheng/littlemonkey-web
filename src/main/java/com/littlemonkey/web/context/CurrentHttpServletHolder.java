@@ -13,16 +13,26 @@ public class CurrentHttpServletHolder {
 
     private static ThreadLocal<HttpServletRequest> currentHttpServletRequestThreadLocal;
     private static ThreadLocal<HttpServletResponse> currentHttpServletResponseThreadLocal;
+    private static ThreadLocal<String> currentServerNameThreadLocal;
+    private static ThreadLocal<String> currentMethodNameThreadLocal;
 
     static {
         currentHttpServletRequestThreadLocal = new ThreadLocal<>();
         currentHttpServletResponseThreadLocal = new ThreadLocal<>();
+        currentServerNameThreadLocal = new ThreadLocal<>();
+        currentMethodNameThreadLocal = new ThreadLocal<>();
     }
 
     public static void setCurrentRequestAndCurrentResponse(HttpServletRequest request, HttpServletResponse response) {
         currentHttpServletRequestThreadLocal.set(request);
         currentHttpServletResponseThreadLocal.set(response);
     }
+
+    public static void setCurrentServerNameAndCurrentMethodName(String serverName, String methodName) {
+        currentServerNameThreadLocal.set(serverName);
+        currentMethodNameThreadLocal.set(methodName);
+    }
+
 
     public static HttpServletRequest getCurrentRequest() {
         return currentHttpServletRequestThreadLocal.get();
@@ -32,4 +42,11 @@ public class CurrentHttpServletHolder {
         return currentHttpServletResponseThreadLocal.get();
     }
 
+    public static String getCurrentServerName() {
+        return currentServerNameThreadLocal.get();
+    }
+
+    public static String getCurrentMethodName() {
+        return currentMethodNameThreadLocal.get();
+    }
 }

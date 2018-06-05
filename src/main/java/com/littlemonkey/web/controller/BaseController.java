@@ -3,6 +3,7 @@ package com.littlemonkey.web.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.littlemonkey.utils.reflection.ReflectionUtils2;
 import com.littlemonkey.web.annotation.Bind;
+import com.littlemonkey.web.annotation.Resource;
 import com.littlemonkey.web.common.ErrorCode;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
@@ -20,7 +21,7 @@ import com.littlemonkey.web.utils.WebUtils2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletResponse;
@@ -34,45 +35,47 @@ import java.util.Objects;
  * @Date: Created in 18:01 2018/4/3
  * @Version: 1.0
  */
-public class BaseController {
+public abstract class BaseController {
 
     private final static Logger logger = LoggerFactory.getLogger(BaseController.class);
 
     /**
      * @param body
      */
-    protected final void processRequest(RequestMethod requestMethod, RequestBody body) throws Exception {
+    protected final void processRequest(RequestMethod requestMethod, RequestBody body) throws ApplicationException {
         Answer answer = new Answer();
         answer.setServiceName(body.getServiceName());
         answer.setMethodName(body.getMethodName());
+        CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
         logger.info("request body: {}", body);
         try {
-            Assert.notNull(answer.getServiceName(), "serviceName is null.");
-            Assert.notNull(answer.getMethodName(), "methodName is null.");
-            MethodDetail methodDetail = MethodCacheHolder.getTargetMethod(body.getServiceName(), body.getMethodName());
-            if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
-                throw new NoSuchBeanDefinitionException("Resources don't exist.");
+            if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
+                throw new NoSuchBeanDefinitionException("Resource don't exist.");
             }
-            RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
+            MethodDetail methodDetail = MethodCacheHolder.getTargetMethod(answer.getServiceName(), answer.getMethodName());
+            if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
+                throw new NoSuchBeanDefinitionException("Resource don't exist.");
+            }
             Bind bind = body.getClass().getAnnotation(Bind.class);
             MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
+
+            RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
-            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName()), methodDetail.getMethodName(),
-                    params, methodDetail.getParameterTypes());
+            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resource.class),
+                    methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
             answer.setResult(result);
         } catch (NoSuchBeanDefinitionException e) {
-            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resources don't exist.");
+            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resource don't exist.");
         } catch (ApplicationException e) {
             throw e;
         } catch (Exception e) {
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Internal server error.");
-        } finally {
-            try {
-                this.callBack(answer);
-            } catch (Exception e) {
-                throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Server response error.");
-            }
+        }
+        try {
+            this.callBack(answer);
+        } catch (Exception e) {
+            throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Server response error.");
         }
     }
 
