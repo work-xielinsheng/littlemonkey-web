@@ -49,4 +49,14 @@ public class CurrentHttpServletHolder {
     public static String getCurrentMethodName() {
         return currentMethodNameThreadLocal.get();
     }
+
+    /**
+     * <p>清理当前线程变量副本，谨慎使用！</p>
+     */
+    public static void removeAll() {
+        currentServerNameThreadLocal.remove();
+        currentMethodNameThreadLocal.remove();
+        currentHttpServletRequestThreadLocal.remove();
+        currentHttpServletResponseThreadLocal.remove();
+    }
 }
