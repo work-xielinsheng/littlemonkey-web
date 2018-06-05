@@ -2,7 +2,7 @@ package com.littlemonkey.web.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.littlemonkey.utils.reflection.ReflectionUtils2;
-import com.littlemonkey.web.annotation.MethodBuildBind;
+import com.littlemonkey.web.annotation.Bind;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.method.MethodCacheHolder;
@@ -52,8 +52,8 @@ public class BaseController {
                 throw new NoSuchBeanDefinitionException("");
             }
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
-            MethodBuildBind methodBuildBind = body.getClass().getAnnotation(MethodBuildBind.class);
-            MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) methodBuildBind.target());
+            Bind bind = body.getClass().getAnnotation(Bind.class);
+            MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
             Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
             Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName()), methodDetail.getMethodName(),

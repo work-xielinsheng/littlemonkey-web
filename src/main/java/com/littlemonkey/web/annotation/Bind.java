@@ -11,6 +11,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface MethodBuildBind {
-    Class target() default DefaultMethodBuildProviderImpl.class;
+public @interface Bind {
+    Class target();
 }

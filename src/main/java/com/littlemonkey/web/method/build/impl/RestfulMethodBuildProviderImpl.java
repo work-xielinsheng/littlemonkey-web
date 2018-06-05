@@ -5,7 +5,6 @@ import com.littlemonkey.utils.base.Constants;
 import com.littlemonkey.utils.collect.Collections3;
 import com.littlemonkey.utils.lang.StringUtils;
 import com.littlemonkey.web.common.ValueConstants;
-import com.littlemonkey.web.method.MethodDetail;
 import com.littlemonkey.web.method.build.MethodBuildProvider;
 import com.littlemonkey.web.param.RequestDetail;
 import com.littlemonkey.web.request.RestfulRequestBody;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

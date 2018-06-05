@@ -1,10 +1,10 @@
 package com.littlemonkey.web.request;
 
 
-import com.littlemonkey.web.annotation.MethodBuildBind;
+import com.littlemonkey.web.annotation.Bind;
 import com.littlemonkey.web.method.build.impl.RestfulMethodBuildProviderImpl;
 
-@MethodBuildBind(target = RestfulMethodBuildProviderImpl.class)
+@Bind(target = RestfulMethodBuildProviderImpl.class)
 public class RestfulRequestBody implements RequestBody {
 
     private String serviceName;

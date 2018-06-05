@@ -1,6 +1,7 @@
 package com.littlemonkey.web.request;
 
-import com.littlemonkey.web.annotation.MethodBuildBind;
+import com.littlemonkey.web.annotation.Bind;
+import com.littlemonkey.web.method.build.impl.DefaultMethodBuildProviderImpl;
 
 /**
  * @Author: xls
@@ -8,7 +9,7 @@ import com.littlemonkey.web.annotation.MethodBuildBind;
  * @Date: Created in 20:32 2018/4/3
  * @Version: 1.0
  */
-@MethodBuildBind
+@Bind(target = DefaultMethodBuildProviderImpl.class)
 public class DefaultRequestBody implements RequestBody {
 
     private String serviceName;
