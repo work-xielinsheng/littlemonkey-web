@@ -1,6 +1,8 @@
 package com.littlemonkey.web.controller;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.littlemonkey.utils.base.Constants;
 import com.littlemonkey.utils.collect.Collections3;
 import com.littlemonkey.utils.lang.JsonUtils;
 import com.littlemonkey.utils.lang.Objects2;
@@ -30,11 +32,13 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -49,14 +53,28 @@ public abstract class BaseController {
 
     protected ThreadLocal<List<MethodInterceptor>> currentMethodInterceptorThreadLocal = new ThreadLocal<>();
 
-    private void initCurrentMethodInterceptors(Method method) {
-        Interceptor interceptor = method.getAnnotation(Interceptor.class);
-        Class[] classes = interceptor.value();
-        List<MethodInterceptor> methodInterceptors = Lists.newArrayListWithCapacity(classes.length);
-        for (Class cls : classes) {
-            methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
+    private static Map<String, List<MethodInterceptor>> methodInterceptorMap;
+
+    @PostConstruct
+    public void initMethodInterceptorMap() {
+        if (Objects.isNull(methodInterceptorMap)) {
+            methodInterceptorMap = Maps.newConcurrentMap();
+            String[] beanNames = SpringContextHolder.getBeanNamesForAnnotation(Resources.class);
+            for (String beanName : beanNames) {
+                List<Method> methodList = Lists.newArrayList(SpringContextHolder.getType(beanName).getMethods());
+                for (Method method : methodList) {
+                    Interceptor interceptor = method.getAnnotation(Interceptor.class);
+                    if (Objects.nonNull(interceptor)) {
+                        Class[] classes = interceptor.value();
+                        List<MethodInterceptor> methodInterceptorList = Lists.newArrayListWithCapacity(classes.length);
+                        for (Class cls : classes) {
+                            methodInterceptorList.add((MethodInterceptor) SpringContextHolder.getBean(cls));
+                        }
+                        methodInterceptorMap.put(com.littlemonkey.utils.lang.StringUtils.join(beanNames, Constants.AD, method.getName()), methodInterceptorList);
+                    }
+                }
+            }
         }
-        currentMethodInterceptorThreadLocal.set(methodInterceptors);
     }
 
     /**
@@ -82,8 +100,6 @@ public abstract class BaseController {
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             final Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
-            // 初始化对应方法拦截器
-            this.initCurrentMethodInterceptors(methodDetail.getMethod());
             // 执行前置方法
             this.before(params);
             final Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
@@ -117,7 +133,7 @@ public abstract class BaseController {
      * @param params
      * @throws Exception
      */
-    private void before(Object[] params) throws Exception {
+    private void before(Object[] params) {
         List<MethodInterceptor> methodInterceptors = currentMethodInterceptorThreadLocal.get();
         if (!Collections3.isEmpty(methodInterceptors)) {
             for (MethodInterceptor methodInterceptor : methodInterceptors) {
@@ -130,7 +146,7 @@ public abstract class BaseController {
      * @param result
      * @throws Exception
      */
-    private void after(Object result) throws Exception {
+    private void after(Object result) {
         List<MethodInterceptor> methodInterceptors = currentMethodInterceptorThreadLocal.get();
         if (!Collections3.isEmpty(methodInterceptors)) {
             for (MethodInterceptor methodInterceptor : methodInterceptors) {
