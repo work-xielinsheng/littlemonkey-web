@@ -82,12 +82,14 @@ public abstract class BaseController {
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             final Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
-
+            // 初始化对应方法拦截器
             this.initCurrentMethodInterceptors(methodDetail.getMethod());
+            // 执行前置方法
             this.before(params);
             final Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
+            // 执行后置方法
             this.after(result);
-
+            // 设置result
             answer.setResult(result);
             answer.setCode(ErrorCode.SC_OK);
             answer.setMessage(ValueConstants.SUCCESS_MESSAGE);
