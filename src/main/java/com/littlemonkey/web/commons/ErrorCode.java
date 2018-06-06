@@ -1,4 +1,4 @@
-package com.littlemonkey.web.common;
+package com.littlemonkey.web.commons;
 
 import org.apache.http.HttpStatus;
 

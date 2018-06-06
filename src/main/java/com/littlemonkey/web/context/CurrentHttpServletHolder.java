@@ -11,9 +11,21 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class CurrentHttpServletHolder {
 
+    /**
+     * <p>保存当前线程HttpServletRequest变量副本</p>
+     */
     private static ThreadLocal<HttpServletRequest> currentHttpServletRequestThreadLocal;
+    /**
+     * <p>保存当前线程HttpServletResponse变量副本</p>
+     */
     private static ThreadLocal<HttpServletResponse> currentHttpServletResponseThreadLocal;
+    /**
+     * <p>保存当前线程请求中serviceName变量副本</p>
+     */
     private static ThreadLocal<String> currentServerNameThreadLocal;
+    /**
+     * <p>保存当前线程请求中methodName变量副本</p>
+     */
     private static ThreadLocal<String> currentMethodNameThreadLocal;
 
     static {

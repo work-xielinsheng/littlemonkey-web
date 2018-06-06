@@ -1,5 +1,6 @@
 package com.littlemonkey.web.controller;
 
+import com.littlemonkey.utils.lang.Objects2;
 import com.littlemonkey.web.annotation.Path;
 import com.littlemonkey.web.context.SpringContextHolder;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +16,7 @@ public class WebBaseMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
         String[] beanNames = SpringContextHolder.getBeanNamesForType(HandlerInterceptor.class);
         for (String beanName : beanNames) {
             HandlerInterceptor handlerInterceptor = SpringContextHolder.getBean(beanName);
-            Path path = handlerInterceptor.getClass().getAnnotation(Path.class);
+            Path path = Objects2.getAnnotation(handlerInterceptor, Path.class);
             registry.addInterceptor(handlerInterceptor).addPathPatterns(path.url()).excludePathPatterns(path.exclude());
         }
         super.addInterceptors(registry);

@@ -1,20 +1,58 @@
 package com.littlemonkey.web.controller;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.littlemonkey.utils.collect.Collections3;
 import com.littlemonkey.web.annotation.Path;
+import com.littlemonkey.web.comparator.IndexComparator;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
+import com.littlemonkey.web.context.SpringContextHolder;
+import com.littlemonkey.web.interceptor.AfterInterceptor;
+import com.littlemonkey.web.interceptor.BeforeInterceptor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Path
 public class WebHandlerInterceptor implements HandlerInterceptor {
 
+    private BeforeInterceptor[] beforeInterceptors;
+    private AfterInterceptor[] afterInterceptors;
+
+    @PostConstruct
+    public void initInterceptor() {
+        Map<String, BeforeInterceptor> beforeInterceptorMap = SpringContextHolder.getBeansOfType(BeforeInterceptor.class);
+        if (Collections3.isNotEmpty(beforeInterceptorMap)) {
+            Comparator<BeforeInterceptor> beforeInterceptorComparator = Ordering.from(new IndexComparator());
+            List<BeforeInterceptor> beforeInterceptorList = Lists.newArrayList(beforeInterceptorMap.values());
+            Collections.sort(beforeInterceptorList, beforeInterceptorComparator);
+            this.beforeInterceptors = (BeforeInterceptor[]) beforeInterceptorList.toArray();
+        }
+        Map<String, AfterInterceptor> afterInterceptorMap = SpringContextHolder.getBeansOfType(AfterInterceptor.class);
+        if (Collections3.isNotEmpty(afterInterceptorMap)) {
+            Comparator<AfterInterceptor> afterInterceptorComparator = Ordering.from(new IndexComparator());
+            List<AfterInterceptor> afterInterceptorList = Lists.newArrayList(afterInterceptorMap.values());
+            Collections.sort(afterInterceptorList, afterInterceptorComparator);
+            this.afterInterceptors = (AfterInterceptor[]) afterInterceptorList.toArray();
+        }
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o) throws Exception {
+        for (BeforeInterceptor beforeInterceptor : beforeInterceptors) {
+            if (!beforeInterceptor.preHandle(httpServletRequest, httpServletResponse)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -25,6 +63,9 @@ public class WebHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) throws Exception {
+        for (AfterInterceptor afterInterceptor : afterInterceptors) {
+            afterInterceptor.afterCompletion(httpServletRequest, httpServletResponse);
+        }
         CurrentHttpServletHolder.removeAll();
     }
 }

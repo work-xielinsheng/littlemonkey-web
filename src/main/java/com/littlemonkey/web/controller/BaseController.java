@@ -1,13 +1,17 @@
 package com.littlemonkey.web.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
+import com.littlemonkey.utils.lang.Objects2;
 import com.littlemonkey.utils.reflection.ReflectionUtils2;
 import com.littlemonkey.web.annotation.Bind;
+import com.littlemonkey.web.annotation.Interceptor;
 import com.littlemonkey.web.annotation.Resources;
-import com.littlemonkey.web.common.ErrorCode;
+import com.littlemonkey.web.commons.ErrorCode;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.exception.ApplicationException;
+import com.littlemonkey.web.interceptor.MethodInterceptor;
 import com.littlemonkey.web.method.MethodCacheHolder;
 import com.littlemonkey.web.method.MethodDetail;
 import com.littlemonkey.web.method.build.MethodBuildProvider;
@@ -26,7 +30,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -39,16 +45,28 @@ public abstract class BaseController {
 
     private final static Logger logger = LoggerFactory.getLogger(BaseController.class);
 
+    protected ThreadLocal<MethodInterceptor[]> currentMethodInterceptorThreadLocal = new ThreadLocal<>();
+
+    private void initCurrentMethodInterceptors(Method method) {
+        Interceptor interceptor = method.getAnnotation(Interceptor.class);
+        Class[] classes = interceptor.values();
+        List<MethodInterceptor> methodInterceptors = Lists.newArrayListWithCapacity(classes.length);
+        for (Class cls : classes) {
+            methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
+        }
+        currentMethodInterceptorThreadLocal.set((MethodInterceptor[]) methodInterceptors.toArray());
+    }
+
     /**
      * @param body
      */
-    protected final void processRequest(RequestMethod requestMethod, RequestBody body) throws ApplicationException {
+    public final void processRequest(RequestMethod requestMethod, RequestBody body) throws ApplicationException {
         Answer answer = new Answer();
         answer.setServiceName(body.getServiceName());
         answer.setMethodName(body.getMethodName());
-        CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
         logger.info("request body: {}", body);
         try {
+            CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
             if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
                 throw new NoSuchBeanDefinitionException("Resources don't exist.");
             }
@@ -56,14 +74,15 @@ public abstract class BaseController {
             if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
                 throw new NoSuchBeanDefinitionException("Resources don't exist.");
             }
-            Bind bind = body.getClass().getAnnotation(Bind.class);
+            Bind bind = Objects2.getAnnotation(body, Bind.class);
             MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
-
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
-            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class),
-                    methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
+            this.initCurrentMethodInterceptors(methodDetail.getMethod());
+            this.before(params);
+            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
+            this.after(result);
             answer.setResult(result);
         } catch (NoSuchBeanDefinitionException e) {
             throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resources don't exist.");
@@ -71,11 +90,35 @@ public abstract class BaseController {
             throw e;
         } catch (Exception e) {
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Internal server error.");
+        } finally {
+            currentMethodInterceptorThreadLocal.remove();
         }
         try {
             this.callBack(answer);
         } catch (Exception e) {
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Server response error.");
+        }
+    }
+
+    /**
+     * @param params
+     * @throws Exception
+     */
+    private void before(Object[] params) throws Exception {
+        MethodInterceptor[] methodInterceptors = currentMethodInterceptorThreadLocal.get();
+        for (MethodInterceptor methodInterceptor : methodInterceptors) {
+            methodInterceptor.before(CurrentHttpServletHolder.getCurrentRequest(), params);
+        }
+    }
+
+    /**
+     * @param result
+     * @throws Exception
+     */
+    private void after(Object result) throws Exception {
+        MethodInterceptor[] methodInterceptors = currentMethodInterceptorThreadLocal.get();
+        for (MethodInterceptor methodInterceptor : methodInterceptors) {
+            methodInterceptor.after(CurrentHttpServletHolder.getCurrentResponse(), result);
         }
     }
 

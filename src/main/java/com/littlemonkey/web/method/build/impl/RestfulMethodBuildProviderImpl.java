@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.littlemonkey.utils.base.Constants;
 import com.littlemonkey.utils.collect.Collections3;
 import com.littlemonkey.utils.lang.StringUtils;
-import com.littlemonkey.web.common.ValueConstants;
+import com.littlemonkey.web.commons.ValueConstants;
 import com.littlemonkey.web.method.build.MethodBuildProvider;
 import com.littlemonkey.web.param.RequestDetail;
 import com.littlemonkey.web.request.RestfulRequestBody;
