@@ -7,7 +7,7 @@ import com.littlemonkey.web.annotation.Resources;
 public class TestService {
 
     @Interceptor(TestMethodInterceptor.class)
-    public void get(long id) {
-        System.out.println(id);
+    public String get(long id) {
+        return String.valueOf(id);
     }
 }
