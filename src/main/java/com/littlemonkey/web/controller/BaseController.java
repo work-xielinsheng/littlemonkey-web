@@ -1,13 +1,15 @@
 package com.littlemonkey.web.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
+import com.littlemonkey.utils.collect.Collections3;
+import com.littlemonkey.utils.lang.JsonUtils;
 import com.littlemonkey.utils.lang.Objects2;
 import com.littlemonkey.utils.reflection.ReflectionUtils2;
 import com.littlemonkey.web.annotation.Bind;
 import com.littlemonkey.web.annotation.Interceptor;
 import com.littlemonkey.web.annotation.Resources;
 import com.littlemonkey.web.commons.ErrorCode;
+import com.littlemonkey.web.commons.ValueConstants;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.exception.ApplicationException;
@@ -45,16 +47,16 @@ public abstract class BaseController {
 
     private final static Logger logger = LoggerFactory.getLogger(BaseController.class);
 
-    protected ThreadLocal<MethodInterceptor[]> currentMethodInterceptorThreadLocal = new ThreadLocal<>();
+    protected ThreadLocal<List<MethodInterceptor>> currentMethodInterceptorThreadLocal = new ThreadLocal<>();
 
     private void initCurrentMethodInterceptors(Method method) {
         Interceptor interceptor = method.getAnnotation(Interceptor.class);
-        Class[] classes = interceptor.values();
+        Class[] classes = interceptor.value();
         List<MethodInterceptor> methodInterceptors = Lists.newArrayListWithCapacity(classes.length);
         for (Class cls : classes) {
             methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
         }
-        currentMethodInterceptorThreadLocal.set((MethodInterceptor[]) methodInterceptors.toArray());
+        currentMethodInterceptorThreadLocal.set(methodInterceptors);
     }
 
     /**
@@ -74,29 +76,38 @@ public abstract class BaseController {
             if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
                 throw new NoSuchBeanDefinitionException("Resources don't exist.");
             }
+            // 编译参数
             Bind bind = Objects2.getAnnotation(body, Bind.class);
             MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
-            Object[] params = methodBuildProvider.buildParams(requestDetail);
+            final Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
+
             this.initCurrentMethodInterceptors(methodDetail.getMethod());
             this.before(params);
-            Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
+            final Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
             this.after(result);
+
             answer.setResult(result);
+            answer.setCode(ErrorCode.SC_OK);
+            answer.setMessage(ValueConstants.SUCCESS_MESSAGE);
         } catch (NoSuchBeanDefinitionException e) {
-            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, "Resources don't exist.");
+            logger.error(e.getMessage(), e);
+            throw new ApplicationException(ErrorCode.SC_NOT_FOUND, ValueConstants.RESOURCES_NOT_FOUND);
         } catch (ApplicationException e) {
+            logger.error(e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Internal server error.");
+            logger.error(e.getMessage(), e);
+            throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, ValueConstants.SERVER_ERROR_MESSAGE);
         } finally {
             currentMethodInterceptorThreadLocal.remove();
         }
         try {
             this.callBack(answer);
         } catch (Exception e) {
-            throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, "Server response error.");
+            logger.error(e.getMessage(), e);
+            throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, ValueConstants.SERVER_RESPONSE_ERROR_MESSAGE);
         }
     }
 
@@ -105,9 +116,11 @@ public abstract class BaseController {
      * @throws Exception
      */
     private void before(Object[] params) throws Exception {
-        MethodInterceptor[] methodInterceptors = currentMethodInterceptorThreadLocal.get();
-        for (MethodInterceptor methodInterceptor : methodInterceptors) {
-            methodInterceptor.before(CurrentHttpServletHolder.getCurrentRequest(), params);
+        List<MethodInterceptor> methodInterceptors = currentMethodInterceptorThreadLocal.get();
+        if (!Collections3.isEmpty(methodInterceptors)) {
+            for (MethodInterceptor methodInterceptor : methodInterceptors) {
+                methodInterceptor.before(CurrentHttpServletHolder.getCurrentRequest(), params);
+            }
         }
     }
 
@@ -116,9 +129,11 @@ public abstract class BaseController {
      * @throws Exception
      */
     private void after(Object result) throws Exception {
-        MethodInterceptor[] methodInterceptors = currentMethodInterceptorThreadLocal.get();
-        for (MethodInterceptor methodInterceptor : methodInterceptors) {
-            methodInterceptor.after(CurrentHttpServletHolder.getCurrentResponse(), result);
+        List<MethodInterceptor> methodInterceptors = currentMethodInterceptorThreadLocal.get();
+        if (!Collections3.isEmpty(methodInterceptors)) {
+            for (MethodInterceptor methodInterceptor : methodInterceptors) {
+                methodInterceptor.after(CurrentHttpServletHolder.getCurrentResponse(), result);
+            }
         }
     }
 
@@ -142,7 +157,7 @@ public abstract class BaseController {
         } else {
             WebUtils2.outJson(response,
                     answer.getResult() instanceof String ?
-                            answer.getResult().toString() : JSONObject.toJSONString(answer));
+                            answer.getResult().toString() : JsonUtils.toJSONString(answer));
         }
     }
 }

@@ -9,5 +9,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Interceptor {
-    Class<? extends MethodInterceptor>[] values();
+    Class<? extends MethodInterceptor>[] value();
 }

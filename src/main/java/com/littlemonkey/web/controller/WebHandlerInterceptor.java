@@ -9,6 +9,8 @@ import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.interceptor.AfterInterceptor;
 import com.littlemonkey.web.interceptor.BeforeInterceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -25,11 +27,14 @@ import java.util.Map;
 @Path
 public class WebHandlerInterceptor implements HandlerInterceptor {
 
+    private final static Logger logger = LoggerFactory.getLogger(WebHandlerInterceptor.class);
+
     private BeforeInterceptor[] beforeInterceptors;
     private AfterInterceptor[] afterInterceptors;
 
     @PostConstruct
     public void initInterceptor() {
+        logger.info("init Interceptor start... ");
         Map<String, BeforeInterceptor> beforeInterceptorMap = SpringContextHolder.getBeansOfType(BeforeInterceptor.class);
         if (Collections3.isNotEmpty(beforeInterceptorMap)) {
             Comparator<BeforeInterceptor> beforeInterceptorComparator = Ordering.from(new IndexComparator());
@@ -44,10 +49,14 @@ public class WebHandlerInterceptor implements HandlerInterceptor {
             Collections.sort(afterInterceptorList, afterInterceptorComparator);
             this.afterInterceptors = (AfterInterceptor[]) afterInterceptorList.toArray();
         }
+        logger.info("init Interceptor stop...");
     }
 
     @Override
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o) throws Exception {
+        if (Collections3.isEmpty(beforeInterceptors)) {
+            return true;
+        }
         for (BeforeInterceptor beforeInterceptor : beforeInterceptors) {
             if (!beforeInterceptor.preHandle(httpServletRequest, httpServletResponse)) {
                 return false;
@@ -63,8 +72,10 @@ public class WebHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) throws Exception {
-        for (AfterInterceptor afterInterceptor : afterInterceptors) {
-            afterInterceptor.afterCompletion(httpServletRequest, httpServletResponse);
+        if (!Collections3.isEmpty(afterInterceptors)) {
+            for (AfterInterceptor afterInterceptor : afterInterceptors) {
+                afterInterceptor.afterCompletion(httpServletRequest, httpServletResponse);
+            }
         }
         CurrentHttpServletHolder.removeAll();
     }
