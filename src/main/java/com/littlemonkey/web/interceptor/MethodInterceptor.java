@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public interface MethodInterceptor {
 
-    void before(HttpServletRequest request, Object... params) throws ApplicationException;
+    void before(HttpServletRequest request, final Object... params) throws ApplicationException;
 
-    void after(HttpServletResponse response,Object result) throws ApplicationException;
+    void after(HttpServletResponse response, final Object result) throws ApplicationException;
 }

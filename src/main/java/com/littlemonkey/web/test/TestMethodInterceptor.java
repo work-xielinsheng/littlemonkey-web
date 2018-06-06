@@ -12,6 +12,9 @@ import javax.servlet.http.HttpServletResponse;
  */
 @Component
 public class TestMethodInterceptor implements MethodInterceptor {
+
+    private Long a;
+
     @Override
     public void before(HttpServletRequest request, Object... params) throws ApplicationException {
 
@@ -21,5 +24,4 @@ public class TestMethodInterceptor implements MethodInterceptor {
     public void after(HttpServletResponse response, Object result) throws ApplicationException {
 
     }
-
 }

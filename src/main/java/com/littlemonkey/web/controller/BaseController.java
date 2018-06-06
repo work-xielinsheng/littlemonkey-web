@@ -47,7 +47,7 @@ public abstract class BaseController {
 
     private final static Logger logger = LoggerFactory.getLogger(BaseController.class);
 
-    private ThreadLocal<List<MethodInterceptor>> currentMethodInterceptorThreadLocal = new ThreadLocal<>();
+    private static ThreadLocal<List<MethodInterceptor>> currentMethodInterceptorThreadLocal = new ThreadLocal<>();
 
     private void initCurrentMethodInterceptors(Method method) {
         Interceptor interceptor = method.getAnnotation(Interceptor.class);
