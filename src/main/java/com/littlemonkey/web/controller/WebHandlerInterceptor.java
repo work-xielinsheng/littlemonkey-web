@@ -72,7 +72,7 @@ public class WebHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) throws Exception {
-        if (!Collections3.isEmpty(afterInterceptors)) {
+        if (Collections3.isNotEmpty(afterInterceptors)) {
             for (AfterInterceptor afterInterceptor : afterInterceptors) {
                 afterInterceptor.afterCompletion(httpServletRequest, httpServletResponse);
             }
