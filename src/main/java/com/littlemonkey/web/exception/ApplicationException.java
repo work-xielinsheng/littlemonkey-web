@@ -1,5 +1,8 @@
 package com.littlemonkey.web.exception;
 
+/**
+ * <p>定义的用户异常</p>
+ */
 public class ApplicationException extends RuntimeException {
 
     private int errorCode;

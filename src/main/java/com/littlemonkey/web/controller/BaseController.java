@@ -53,8 +53,10 @@ public abstract class BaseController {
         Interceptor interceptor = method.getAnnotation(Interceptor.class);
         Class[] classes = interceptor.value();
         List<MethodInterceptor> methodInterceptors = Lists.newArrayListWithCapacity(classes.length);
-        for (Class cls : classes) {
-            methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
+        if (Collections3.isNotEmpty(classes)) {
+            for (Class cls : classes) {
+                methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
+            }
         }
         currentMethodInterceptorThreadLocal.set(methodInterceptors);
     }
@@ -62,19 +64,20 @@ public abstract class BaseController {
     /**
      * @param body
      */
-    public final void processRequest(RequestMethod requestMethod, RequestBody body) throws ApplicationException {
-        Answer answer = new Answer();
+    public final void processRequest(final RequestMethod requestMethod, final RequestBody body) throws ApplicationException {
+        final Answer answer = new Answer();
         answer.setServiceName(body.getServiceName());
         answer.setMethodName(body.getMethodName());
         logger.info("request body: {}", body);
         try {
             CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
             if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
-                throw new NoSuchBeanDefinitionException("Resources don't exist.");
+                throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
-            MethodDetail methodDetail = MethodCacheHolder.getTargetMethod(answer.getServiceName(), answer.getMethodName());
-            if (Objects.isNull(methodDetail) || Objects.isNull(methodDetail.getMethod())) {
-                throw new NoSuchBeanDefinitionException("Resources don't exist.");
+            final MethodDetail methodDetail = MethodCacheHolder.getTargetMethod(answer.getServiceName(), answer.getMethodName());
+            final Method targetMethod = methodDetail.getMethod();
+            if (Objects.isNull(methodDetail) || Objects.isNull(targetMethod)) {
+                throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
             // 编译参数
             Bind bind = Objects2.getAnnotation(body, Bind.class);
@@ -83,7 +86,7 @@ public abstract class BaseController {
             final Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
             // 初始化对应方法拦截器
-            this.initCurrentMethodInterceptors(methodDetail.getMethod());
+            this.initCurrentMethodInterceptors(targetMethod);
             // 执行前置方法
             this.before(params);
             final Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
@@ -119,7 +122,7 @@ public abstract class BaseController {
      */
     private void before(Object[] params) {
         List<MethodInterceptor> methodInterceptors = currentMethodInterceptorThreadLocal.get();
-        if (!Collections3.isEmpty(methodInterceptors)) {
+        if (Collections3.isNotEmpty(methodInterceptors)) {
             for (MethodInterceptor methodInterceptor : methodInterceptors) {
                 methodInterceptor.before(CurrentHttpServletHolder.getCurrentRequest(), params);
             }
@@ -132,7 +135,7 @@ public abstract class BaseController {
      */
     private void after(Object result) {
         List<MethodInterceptor> methodInterceptors = currentMethodInterceptorThreadLocal.get();
-        if (!Collections3.isEmpty(methodInterceptors)) {
+        if (Collections3.isNotEmpty(methodInterceptors)) {
             for (MethodInterceptor methodInterceptor : methodInterceptors) {
                 methodInterceptor.after(CurrentHttpServletHolder.getCurrentResponse(), result);
             }
