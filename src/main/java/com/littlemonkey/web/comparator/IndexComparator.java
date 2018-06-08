@@ -5,6 +5,9 @@ import com.littlemonkey.web.annotation.Index;
 
 import java.util.Comparator;
 
+/**
+ * <p>Index 排序器</p>
+ */
 public class IndexComparator implements Comparator {
 
     @Override

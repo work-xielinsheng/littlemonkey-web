@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
  * @Date: Created in 0:40 2018/3/28
  * @Version: 1.0
  */
-public class CurrentHttpServletHolder {
+public final class CurrentHttpServletHolder {
 
     /**
      * <p>保存当前线程HttpServletRequest变量副本</p>
