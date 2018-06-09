@@ -28,6 +28,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Method;
@@ -53,8 +54,9 @@ public abstract class BaseController {
         answer.setServiceName(body.getServiceName());
         answer.setMethodName(body.getMethodName());
         logger.info("request body: {}", body);
+        HttpServletRequest request = CurrentHttpServletHolder.getCurrentRequest();
+        HttpServletResponse response = CurrentHttpServletHolder.getCurrentResponse();
         try {
-            CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
             if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
                 throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
@@ -70,10 +72,10 @@ public abstract class BaseController {
             final Object[] params = methodBuildProvider.buildParams(requestDetail);
             logger.info("params: {}", Arrays.toString(params));
             // 执行前置方法
-            this.before(targetMethod, params);
+            this.before(request, targetMethod, params);
             final Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
             // 执行后置方法
-            this.after(targetMethod, result);
+            this.after(response, targetMethod, result);
             // 设置result
             answer.setResult(result);
             answer.setCode(ErrorCode.SC_OK);
@@ -89,7 +91,7 @@ public abstract class BaseController {
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, ValueConstants.SERVER_ERROR_MESSAGE);
         }
         try {
-            this.callBack(answer);
+            this.callBack(response, answer);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, ValueConstants.SERVER_RESPONSE_ERROR_MESSAGE);
@@ -100,11 +102,11 @@ public abstract class BaseController {
      * @param params
      * @throws Exception
      */
-    private void before(Method method, Object[] params) {
+    private void before(HttpServletRequest request, Method method, Object[] params) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
             for (MethodInterceptor methodInterceptor : methodInterceptors) {
-                methodInterceptor.before(CurrentHttpServletHolder.getCurrentRequest(), params);
+                methodInterceptor.before(request, params);
             }
         }
     }
@@ -113,22 +115,19 @@ public abstract class BaseController {
      * @param result
      * @throws Exception
      */
-    private void after(Method method, Object result) {
+    private void after(HttpServletResponse response, Method method, Object result) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
             for (MethodInterceptor methodInterceptor : methodInterceptors) {
-                methodInterceptor.after(CurrentHttpServletHolder.getCurrentResponse(), result);
+                methodInterceptor.after(response, result);
             }
         }
     }
 
     /**
      * <p>回调方法</p>
-     *
-     * @param answer
      */
-    protected void callBack(Answer answer) {
-        HttpServletResponse response = CurrentHttpServletHolder.getCurrentResponse();
+    protected void callBack(HttpServletResponse response, Answer answer) {
         if (answer.getResult() instanceof byte[]) {
             WebUtils2.outByte(response, (byte[]) answer.getResult());
         } else if (answer.getResult() instanceof StringResponse) {
