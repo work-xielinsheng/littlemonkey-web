@@ -105,9 +105,9 @@ public abstract class BaseController {
     private void before(HttpServletRequest request, Method method, Object[] params) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
-            for (MethodInterceptor methodInterceptor : methodInterceptors) {
+            methodInterceptors.forEach((MethodInterceptor methodInterceptor) ->{
                 methodInterceptor.before(request, params);
-            }
+            });
         }
     }
 
@@ -118,9 +118,9 @@ public abstract class BaseController {
     private void after(HttpServletResponse response, Method method, Object result) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
-            for (MethodInterceptor methodInterceptor : methodInterceptors) {
+            methodInterceptors.forEach((MethodInterceptor methodInterceptor) ->{
                 methodInterceptor.after(response, result);
-            }
+            });
         }
     }
 

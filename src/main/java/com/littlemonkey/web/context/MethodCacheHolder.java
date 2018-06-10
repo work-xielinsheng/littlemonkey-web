@@ -7,18 +7,26 @@ import com.littlemonkey.web.annotation.Interceptor;
 import com.littlemonkey.web.annotation.Resources;
 import com.littlemonkey.web.interceptor.MethodInterceptor;
 import com.littlemonkey.web.method.MethodDetail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @Auther: xielinsheng
  * @Date: 2018/6/9 00:32
  * @Description:
  */
+@Component
 public class MethodCacheHolder {
+
+    private final static Logger logger = LoggerFactory.getLogger(MethodCacheHolder.class);
     /**
      * 缓存方法的拦截器
      */
@@ -41,25 +49,39 @@ public class MethodCacheHolder {
         putMethodDetail(resourceName + "_" + methodName, methodDetail);
     }
 
+    @Resource
+    private  SpringContextHolder springContextHolder;
+
     @PostConstruct
     public void init() {
-        String[] resourceNames = SpringContextHolder.getBeanNamesForAnnotation(Resources.class);
-        for (String resourceName : resourceNames) {
-            List<Method> methodList = Lists.newArrayList(SpringContextHolder.getType(resourceName).getMethods());
-            methodList.forEach((Method method) -> {
-                MethodDetail methodDetail = new MethodDetail(method);
-                putMethodDetail(resourceName, method.getName(), methodDetail);
-                Interceptor interceptor = method.getAnnotation(Interceptor.class);
-                Class[] classes = interceptor.value();
-                List<MethodInterceptor> methodInterceptors = Lists.newArrayListWithCapacity(classes.length);
-                if (Collections3.isNotEmpty(classes)) {
-                    for (Class cls : classes) {
-                        methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
-                    }
+        logger.info("init method cache......");
+        String[] resourceNames = springContextHolder.getBeanNamesForAnnotation(Resources.class);
+        if (Collections3.isNotEmpty(resourceNames)) {
+            for (String resourceName : resourceNames) {
+                List<Method> methodList = Lists.newArrayList(SpringContextHolder.getType(resourceName).getDeclaredMethods());
+                if (Collections3.isEmpty(methodList)) {
+                    continue;
                 }
-                methodInterceptorCache.put(method, methodInterceptors);
-            });
+                methodList.forEach((Method method) -> {
+                    MethodDetail methodDetail = new MethodDetail(method);
+                    putMethodDetail(resourceName, method.getName(), methodDetail);
+                    Interceptor interceptor = method.getAnnotation(Interceptor.class);
+                    if (Objects.nonNull(interceptor)) {
+                        Class[] classes = interceptor.value();
+                        if (Collections3.isNotEmpty(classes)) {
+                            List<MethodInterceptor> methodInterceptors = Lists.newArrayListWithCapacity(classes.length);
+                            if (Collections3.isNotEmpty(classes)) {
+                                for (Class cls : classes) {
+                                    methodInterceptors.add((MethodInterceptor) SpringContextHolder.getBean(cls));
+                                }
+                            }
+                            methodInterceptorCache.put(method, methodInterceptors);
+                        }
+                    }
+                });
+            }
         }
+
     }
 
     public static MethodDetail getMethodDetail(String resourceName, String methodName) {

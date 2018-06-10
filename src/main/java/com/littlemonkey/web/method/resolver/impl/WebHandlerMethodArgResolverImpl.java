@@ -5,19 +5,15 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.littlemonkey.utils.base.GenericType;
 import com.littlemonkey.utils.collect.Collections3;
-import com.littlemonkey.utils.lang.NumberUtils2;
+import com.littlemonkey.utils.lang.Objects2;
 import com.littlemonkey.utils.lang.StringUtils;
 import com.littlemonkey.web.method.MethodParameter;
 import com.littlemonkey.web.method.resolver.WebHandlerMethodArgResolver;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.NumberUtils;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,8 +48,8 @@ public class WebHandlerMethodArgResolverImpl implements WebHandlerMethodArgResol
             if (Objects.isNull(value)) {
                 return null;
             }
-            if (NumberUtils2.isNumberClass(tClass)) {
-                return NumberUtils2.parseNumber(value, tClass);
+            if (Objects2.isNumberClass(tClass)) {
+                return Objects2.parseNumber(value, tClass);
             } else if (tClass.equals(boolean.class) || tClass.equals(Boolean.class)) {
                 return Boolean.parseBoolean(value);
             } else {
