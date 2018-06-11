@@ -5,12 +5,12 @@ import com.littlemonkey.web.method.Method;
 import com.littlemonkey.web.request.DefaultRequestBody;
 import com.littlemonkey.web.request.RestfulRequestBody;
 import com.littlemonkey.web.utils.WebUtils2;
-import org.springframework.context.annotation.Scope;
+import org.apache.shiro.authz.annotation.Logical;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/api")
 public class ApiController extends BaseController {
 
     /**
@@ -32,6 +32,7 @@ public class ApiController extends BaseController {
      * @param id
      */
     @GetMapping(value = "/{serviceName}/{id}")
+    @RequiresRoles(value={"admin","user"},logical = Logical.OR)
     public void doGetItem(@PathVariable(name = "serviceName") String serviceName, @PathVariable(name = "id") Long id) throws Exception {
         RestfulRequestBody restfulRequestBody = new RestfulRequestBody(serviceName, Method.get.name(), null,
                 WebUtils2.getQueryString(CurrentHttpServletHolder.getCurrentRequest()), id);

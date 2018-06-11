@@ -57,12 +57,16 @@ public abstract class BaseController {
         HttpServletRequest request = CurrentHttpServletHolder.getCurrentRequest();
         HttpServletResponse response = CurrentHttpServletHolder.getCurrentResponse();
         try {
+            CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
             if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
                 throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
             final MethodDetail methodDetail = MethodCacheHolder.getMethodDetail(answer.getServiceName(), answer.getMethodName());
+            if (Objects.isNull(methodDetail)) {
+                throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
+            }
             final Method targetMethod = methodDetail.getMethod();
-            if (Objects.isNull(methodDetail) || Objects.isNull(targetMethod)) {
+            if (Objects.isNull(targetMethod)) {
                 throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
             // 编译参数
@@ -105,7 +109,7 @@ public abstract class BaseController {
     private void before(HttpServletRequest request, Method method, Object[] params) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
-            methodInterceptors.forEach((MethodInterceptor methodInterceptor) ->{
+            methodInterceptors.forEach((MethodInterceptor methodInterceptor) -> {
                 methodInterceptor.before(request, params);
             });
         }
@@ -118,7 +122,7 @@ public abstract class BaseController {
     private void after(HttpServletResponse response, Method method, Object result) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
-            methodInterceptors.forEach((MethodInterceptor methodInterceptor) ->{
+            methodInterceptors.forEach((MethodInterceptor methodInterceptor) -> {
                 methodInterceptor.after(response, result);
             });
         }
