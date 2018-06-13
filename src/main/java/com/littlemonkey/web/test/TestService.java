@@ -1,8 +1,6 @@
 package com.littlemonkey.web.test;
 
 import com.littlemonkey.web.annotation.Resources;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.subject.Subject;
 
 /**
  * @Auther: xielinsheng
