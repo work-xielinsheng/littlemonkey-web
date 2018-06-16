@@ -6,7 +6,6 @@ import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.pam.ModularRealmAuthenticator;
 import org.apache.shiro.realm.Realm;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 
@@ -30,14 +29,9 @@ public class WebModularRealmAuthenticator extends ModularRealmAuthenticator {
         // 所有Realm
         Collection<Realm> realms = getRealms();
         // 登录类型对应的所有Realm
-        Collection<Realm> typeRealms = new ArrayList<>();
         HashMap<String, Realm> realmHashMap = new HashMap<>(realms.size());
         for (Realm realm : realms) {
             realmHashMap.put(realm.getName(), realm);
-//            if (realm.getName().contains(loginType)){
-//                typeRealms.add(realm);
-//            }
-
         }
         System.out.println("realmHashMap.get(loginType):" + realmHashMap.get(loginType));
         if (realmHashMap.get(loginType) != null) {

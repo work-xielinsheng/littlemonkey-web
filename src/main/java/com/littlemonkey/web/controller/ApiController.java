@@ -32,7 +32,6 @@ public class ApiController extends BaseController {
      * @param id
      */
     @GetMapping(value = "/{serviceName}/{id}")
-    @RequiresRoles(value={"admin","user"},logical = Logical.OR)
     public void doGetItem(@PathVariable(name = "serviceName") String serviceName, @PathVariable(name = "id") Long id) throws Exception {
         RestfulRequestBody restfulRequestBody = new RestfulRequestBody(serviceName, Method.get.name(), null,
                 WebUtils2.getQueryString(CurrentHttpServletHolder.getCurrentRequest()), id);
