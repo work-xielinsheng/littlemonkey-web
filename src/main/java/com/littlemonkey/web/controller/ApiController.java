@@ -5,8 +5,6 @@ import com.littlemonkey.web.method.Method;
 import com.littlemonkey.web.request.DefaultRequestBody;
 import com.littlemonkey.web.request.RestfulRequestBody;
 import com.littlemonkey.web.utils.WebUtils2;
-import org.apache.shiro.authz.annotation.Logical;
-import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
