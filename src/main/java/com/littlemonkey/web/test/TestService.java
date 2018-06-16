@@ -1,6 +1,9 @@
 package com.littlemonkey.web.test;
 
 import com.littlemonkey.web.annotation.Resources;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
 
 /**
  * @Auther: xielinsheng
@@ -12,6 +15,7 @@ public class TestService {
 
     public void get(long id) {
         Subject subject = SecurityUtils.getSubject();
-        System.out.println(id);
+        subject.login(new UsernamePasswordToken("xielinsheng", "123456"));
+        subject.isPermitted("????");
     }
 }
