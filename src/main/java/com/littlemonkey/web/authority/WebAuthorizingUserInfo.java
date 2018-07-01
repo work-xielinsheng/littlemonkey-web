@@ -8,5 +8,5 @@ public interface WebAuthorizingUserInfo {
 
     Set<String> getRoles(String username);
 
-    Set<String> getPermissionsByRole(String role);
+    Set<String> getPermissionsByRoles(Set<String> roles);
 }

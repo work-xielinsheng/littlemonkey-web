@@ -20,7 +20,7 @@ public class WebXX implements  WebAuthorizingUserInfo {
     }
 
     @Override
-    public Set<String> getPermissionsByRole(String role) {
+    public Set<String> getPermissionsByRoles(Set<String> roles) {
         Set<String> strings = Sets.newHashSet();
         strings.add("add");
         return strings;
