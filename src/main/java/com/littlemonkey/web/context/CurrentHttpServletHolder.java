@@ -1,5 +1,7 @@
 package com.littlemonkey.web.context;
 
+import com.littlemonkey.utils.lang.Objects2;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -41,6 +43,8 @@ public final class CurrentHttpServletHolder {
     }
 
     public static void setCurrentServerNameAndCurrentMethodName(String serverName, String methodName) {
+        Objects2.requireNonNull(serverName);
+        Objects2.requireNonNull(methodName);
         currentServerNameThreadLocal.set(serverName);
         currentMethodNameThreadLocal.set(methodName);
     }

@@ -12,6 +12,7 @@ import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.MethodCacheHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.exception.ApplicationException;
+import com.littlemonkey.web.interceptor.AuthorityInterceptor;
 import com.littlemonkey.web.interceptor.MethodInterceptor;
 import com.littlemonkey.web.method.MethodDetail;
 import com.littlemonkey.web.method.build.MethodBuildProvider;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -57,14 +59,22 @@ public abstract class BaseController {
         HttpServletRequest request = CurrentHttpServletHolder.getCurrentRequest();
         HttpServletResponse response = CurrentHttpServletHolder.getCurrentResponse();
         try {
+            CurrentHttpServletHolder.setCurrentServerNameAndCurrentMethodName(body.getServiceName(), body.getMethodName());
             if (!StringUtils.hasText(answer.getServiceName()) || !StringUtils.hasText(answer.getMethodName())) {
                 throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
             final MethodDetail methodDetail = MethodCacheHolder.getMethodDetail(answer.getServiceName(), answer.getMethodName());
-            final Method targetMethod = methodDetail.getMethod();
-            if (Objects.isNull(methodDetail) || Objects.isNull(targetMethod)) {
+            if (Objects.isNull(methodDetail)) {
                 throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
+            final Method targetMethod = methodDetail.getMethod();
+            if (Objects.isNull(targetMethod)) {
+                throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
+            }
+            // 权限验证
+            this.authorityInterceptor(SpringContextHolder.getType(body.getServiceName(), Resources.class));
+            this.authorityInterceptor(targetMethod);
+
             // 编译参数
             Bind bind = Objects2.getAnnotation(body, Bind.class);
             MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
@@ -99,13 +109,26 @@ public abstract class BaseController {
     }
 
     /**
+     * <p>权限验证</p>
+     *
+     * @param annotatedElement
+     */
+    private void authorityInterceptor(AnnotatedElement annotatedElement) {
+        if (Objects2.nonNull(annotatedElement)) {
+            AuthorityInterceptor authorityInterceptor = SpringContextHolder.getBean(AuthorityInterceptor.class);
+            authorityInterceptor.interceptor(annotatedElement);
+        }
+    }
+
+
+    /**
      * @param params
      * @throws Exception
      */
     private void before(HttpServletRequest request, Method method, Object[] params) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
-            methodInterceptors.forEach((MethodInterceptor methodInterceptor) ->{
+            methodInterceptors.forEach((MethodInterceptor methodInterceptor) -> {
                 methodInterceptor.before(request, params);
             });
         }
@@ -118,7 +141,7 @@ public abstract class BaseController {
     private void after(HttpServletResponse response, Method method, Object result) {
         List<MethodInterceptor> methodInterceptors = MethodCacheHolder.getMethodInterceptor(method);
         if (Collections3.isNotEmpty(methodInterceptors)) {
-            methodInterceptors.forEach((MethodInterceptor methodInterceptor) ->{
+            methodInterceptors.forEach((MethodInterceptor methodInterceptor) -> {
                 methodInterceptor.after(response, result);
             });
         }
