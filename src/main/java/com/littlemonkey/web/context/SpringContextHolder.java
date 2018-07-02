@@ -54,6 +54,14 @@ public final class SpringContextHolder implements ApplicationContextAware {
         return applicationContext.getType(beanName);
     }
 
+    public static Class<?> getType(String beanName, Class<? extends Annotation> annotationType) {
+        Class tClass = applicationContext.getType(beanName);
+        if (!tClass.isAnnotationPresent(annotationType)) {
+            throw new NoSuchBeanDefinitionException("Resources don't exist.");
+        }
+        return tClass;
+    }
+
     public static <T> T getBean(Class<T> requiredType) {
         return applicationContext.getBean(requiredType);
     }
