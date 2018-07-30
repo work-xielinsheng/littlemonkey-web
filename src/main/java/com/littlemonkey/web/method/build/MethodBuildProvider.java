@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 public interface MethodBuildProvider {
+
     Object[] buildParams(RequestDetail requestDetail);
 
     default Object[] resolve(RequestDetail requestDetail) {

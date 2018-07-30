@@ -27,6 +27,7 @@ import java.util.Objects;
 public class MethodCacheHolder {
 
     private final static Logger logger = LoggerFactory.getLogger(MethodCacheHolder.class);
+
     /**
      * 缓存方法的拦截器
      */
@@ -54,7 +55,6 @@ public class MethodCacheHolder {
 
     @PostConstruct
     public void init() {
-        logger.info("init method cache......");
         String[] resourceNames = springContextHolder.getBeanNamesForAnnotation(Resources.class);
         if (Collections3.isNotEmpty(resourceNames)) {
             for (String resourceName : resourceNames) {
