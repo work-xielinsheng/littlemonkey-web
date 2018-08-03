@@ -24,7 +24,6 @@ public interface MethodBuildProvider {
         RequestBody body = requestDetail.getRequestBody();
         List<Object> params = Lists.newArrayListWithCapacity(methodDetail.getMethod().getParameterTypes().length);
         String[] beanNames = SpringContextHolder.getBeanNamesForType(WebHandlerMethodArgResolver.class);
-
         methodDetail.getParamsGenericTypeMap().forEach(new BiConsumer<String, GenericType>() {
             @Override
             public void accept(String paramName, GenericType genericType) {

@@ -40,7 +40,7 @@ public class WebHandlerMethodArgResolverImpl implements WebHandlerMethodArgResol
         if (StringUtils.isNotBlank(content)) {
             contentBody = JSON.parse(content);
         }
-        if (tClass.isPrimitive()) {// 方法参数是个基本类型,这时候只需要将queryString内容映射到目标方法参数
+        if (Objects2.isSimple(tClass)) {// 方法参数是个基本类型,这时候只需要将queryString内容映射到目标方法参数
             if (Collections3.isEmpty(queryBody)) {
                 return null;
             }
@@ -52,9 +52,12 @@ public class WebHandlerMethodArgResolverImpl implements WebHandlerMethodArgResol
                 return Objects2.parseNumber(value, tClass);
             } else if (tClass.equals(boolean.class) || tClass.equals(Boolean.class)) {
                 return Boolean.parseBoolean(value);
-            } else {
+            } else if (tClass.equals(char.class) || tClass.equals(Character.class)) {
                 return value.toCharArray()[0];
+            } else if (tClass.equals(String.class)) {
+                return value;
             }
+            return null;
         } else {// 方法非基本类型
             if (Objects.isNull(contentBody)) {
                 return null;

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
+@RequestMapping("/api")
 public class ApiController extends BaseController {
 
     /**
@@ -18,8 +19,7 @@ public class ApiController extends BaseController {
      */
     @GetMapping(value = "/{serviceName}")
     public void doGetList(@PathVariable(name = "serviceName") String serviceName) throws Exception {
-        RestfulRequestBody restfulRequestBody = new RestfulRequestBody(serviceName,
-                Method.list.name(), null, CurrentHttpServletHolder.getCurrentRequest().getQueryString(), null);
+        RestfulRequestBody restfulRequestBody = new RestfulRequestBody(serviceName, Method.list.name(), null, WebUtils2.getQueryString(CurrentHttpServletHolder.getCurrentRequest()), null);
         this.processRequest(RequestMethod.GET, restfulRequestBody);
     }
 
@@ -82,7 +82,7 @@ public class ApiController extends BaseController {
      * @param serviceName
      * @param methodName
      */
-    @GetMapping(value = "/{serviceName}/{methodName}.other")
+    @GetMapping(value = "/{serviceName}/{methodName}.do")
     public void otherGet(@PathVariable(name = "serviceName") String serviceName, @PathVariable(name = "methodName") String methodName) throws Exception {
         DefaultRequestBody defaultRequestBody = new DefaultRequestBody(serviceName, methodName, null,
                 WebUtils2.getQueryString(CurrentHttpServletHolder.getCurrentRequest()));
@@ -95,7 +95,7 @@ public class ApiController extends BaseController {
      * @param serviceName
      * @param methodName
      */
-    @PostMapping(value = "/{serviceName}/{methodName}.other", consumes = "application/json")
+    @PostMapping(value = "/{serviceName}/{methodName}.do", consumes = "application/json")
     public void otherPost(@PathVariable(name = "serviceName") String serviceName, @PathVariable(name = "methodName") String methodName) throws Exception {
         DefaultRequestBody defaultRequestBody = new DefaultRequestBody(serviceName, methodName,
                 WebUtils2.getRequestBodyJson(CurrentHttpServletHolder.getCurrentRequest()), null);

@@ -11,7 +11,7 @@ public class RestfulRequestBody implements RequestBody {
     private String methodName;
     private String content;
     private String queryString;
-    private long id;
+    private Long id;
 
     public RestfulRequestBody(String serviceName, String methodName, String content, String queryString, Long id) {
         this.serviceName = serviceName;
@@ -57,11 +57,11 @@ public class RestfulRequestBody implements RequestBody {
         this.queryString = queryString;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
