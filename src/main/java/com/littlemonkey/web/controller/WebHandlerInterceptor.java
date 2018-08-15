@@ -2,7 +2,7 @@ package com.littlemonkey.web.controller;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import com.littlemonkey.utils.collect.Collections3;
+import com.littlemonkey.utils.collection.Collections3;
 import com.littlemonkey.web.annotation.Path;
 import com.littlemonkey.web.comparator.IndexComparator;
 import com.littlemonkey.web.context.CurrentHttpServletHolder;

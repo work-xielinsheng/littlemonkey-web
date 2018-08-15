@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.littlemonkey.utils.base.GenericType;
-import com.littlemonkey.utils.collect.Collections3;
+import com.littlemonkey.utils.collection.Collections3;
 import com.littlemonkey.utils.lang.Objects2;
 import com.littlemonkey.utils.lang.StringUtils;
 import com.littlemonkey.web.method.MethodParameter;
