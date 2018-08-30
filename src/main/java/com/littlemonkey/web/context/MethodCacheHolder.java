@@ -2,7 +2,7 @@ package com.littlemonkey.web.context;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.littlemonkey.utils.collection.Collections3;
+import com.littlemonkey.utils.collect.Collections3;
 import com.littlemonkey.web.annotation.Interceptor;
 import com.littlemonkey.web.annotation.Resources;
 import com.littlemonkey.web.commons.ValueConstants;
