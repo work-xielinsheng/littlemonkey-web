@@ -6,4 +6,7 @@ public interface ValueConstants {
     String SERVER_ERROR_MESSAGE = "Internal server error.";
     String SERVER_RESPONSE_ERROR_MESSAGE = "Server response error.";
     String RESOURCES_NOT_FOUND = "Resources don't exist.";
+    String PRIVATE = "private";
+    String STATIC = "static";
+
 }

@@ -12,7 +12,6 @@ import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.MethodCacheHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.exception.ApplicationException;
-import com.littlemonkey.web.interceptor.AuthorityInterceptor;
 import com.littlemonkey.web.interceptor.MethodInterceptor;
 import com.littlemonkey.web.method.MethodDetail;
 import com.littlemonkey.web.method.build.MethodBuildProvider;
@@ -23,8 +22,7 @@ import com.littlemonkey.web.response.FileResponse;
 import com.littlemonkey.web.response.StringResponse;
 import com.littlemonkey.web.response.WorkBookResponse;
 import com.littlemonkey.web.utils.WebUtils2;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -32,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -44,9 +41,9 @@ import java.util.Objects;
  * @Date: Created in 18:01 2018/4/3
  * @Version: 1.0
  */
+@Slf4j
 public abstract class BaseController {
 
-    private final static Logger logger = LoggerFactory.getLogger(BaseController.class);
 
     /**
      * @param body
@@ -55,7 +52,7 @@ public abstract class BaseController {
         final Answer answer = new Answer();
         answer.setServiceName(body.getServiceName());
         answer.setMethodName(body.getMethodName());
-        logger.info("request body: {}", body);
+        log.info("request body: {}", body);
         HttpServletRequest request = CurrentHttpServletHolder.getCurrentRequest();
         HttpServletResponse response = CurrentHttpServletHolder.getCurrentResponse();
         try {
@@ -71,16 +68,12 @@ public abstract class BaseController {
             if (Objects.isNull(targetMethod)) {
                 throw new NoSuchBeanDefinitionException(ValueConstants.RESOURCES_NOT_FOUND);
             }
-            // 权限验证
-            this.authorityInterceptor(SpringContextHolder.getType(body.getServiceName(), Resources.class));
-            this.authorityInterceptor(targetMethod);
-
             // 编译参数
             Bind bind = Objects2.getAnnotation(body, Bind.class);
             MethodBuildProvider methodBuildProvider = SpringContextHolder.getBean((Class<MethodBuildProvider>) bind.target());
             RequestDetail requestDetail = new RequestDetail(requestMethod, body, methodDetail);
             final Object[] params = methodBuildProvider.buildParams(requestDetail);
-            logger.info("params: {}", Arrays.toString(params));
+            log.info("params: {}", Arrays.toString(params));
             // 执行前置方法
             this.before(request, targetMethod, params);
             final Object result = ReflectionUtils2.invokeMethod(SpringContextHolder.getBean(body.getServiceName(), Resources.class), methodDetail.getMethodName(), params, methodDetail.getParameterTypes());
@@ -91,35 +84,22 @@ public abstract class BaseController {
             answer.setCode(ErrorCode.SC_OK);
             answer.setMessage(ValueConstants.SUCCESS_MESSAGE);
         } catch (NoSuchBeanDefinitionException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new ApplicationException(ErrorCode.SC_NOT_FOUND, ValueConstants.RESOURCES_NOT_FOUND);
         } catch (ApplicationException e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, ValueConstants.SERVER_ERROR_MESSAGE);
         }
         try {
             this.callBack(response, answer);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             throw new ApplicationException(ErrorCode.SC_INTERNAL_SERVER_ERROR, ValueConstants.SERVER_RESPONSE_ERROR_MESSAGE);
         }
     }
-
-    /**
-     * <p>权限验证</p>
-     *
-     * @param annotatedElement
-     */
-    private void authorityInterceptor(AnnotatedElement annotatedElement) {
-        if (Objects2.nonNull(annotatedElement)) {
-            AuthorityInterceptor authorityInterceptor = SpringContextHolder.getBean(AuthorityInterceptor.class);
-            authorityInterceptor.interceptor(annotatedElement);
-        }
-    }
-
 
     /**
      * @param params

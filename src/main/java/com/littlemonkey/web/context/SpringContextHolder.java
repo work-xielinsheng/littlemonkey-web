@@ -1,5 +1,6 @@
 package com.littlemonkey.web.context;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
@@ -10,6 +11,7 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 
 @Component
+@Slf4j
 public final class SpringContextHolder implements ApplicationContextAware {
 
     private static ApplicationContext applicationContext;

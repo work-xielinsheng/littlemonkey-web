@@ -9,8 +9,7 @@ import com.littlemonkey.web.context.CurrentHttpServletHolder;
 import com.littlemonkey.web.context.SpringContextHolder;
 import com.littlemonkey.web.interceptor.AfterInterceptor;
 import com.littlemonkey.web.interceptor.BeforeInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -25,16 +24,16 @@ import java.util.Map;
 
 @Component
 @Path
+@Slf4j
 public class WebHandlerInterceptor implements HandlerInterceptor {
 
-    private final static Logger logger = LoggerFactory.getLogger(WebHandlerInterceptor.class);
-
     private BeforeInterceptor[] beforeInterceptors;
+
     private AfterInterceptor[] afterInterceptors;
 
     @PostConstruct
     public void initInterceptor() {
-        logger.info("init Interceptor start... ");
+        log.info("init Interceptor start... ");
         Map<String, BeforeInterceptor> beforeInterceptorMap = SpringContextHolder.getBeansOfType(BeforeInterceptor.class);
         if (Collections3.isNotEmpty(beforeInterceptorMap)) {
             Comparator<BeforeInterceptor> beforeInterceptorComparator = Ordering.from(new IndexComparator());
@@ -49,7 +48,7 @@ public class WebHandlerInterceptor implements HandlerInterceptor {
             Collections.sort(afterInterceptorList, afterInterceptorComparator);
             this.afterInterceptors = (AfterInterceptor[]) afterInterceptorList.toArray();
         }
-        logger.info("init Interceptor stop...");
+        log.info("init Interceptor stop...");
     }
 
     @Override
@@ -72,11 +71,11 @@ public class WebHandlerInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) throws Exception {
-        CurrentHttpServletHolder.removeAll();
         if (Collections3.isNotEmpty(afterInterceptors)) {
             for (AfterInterceptor afterInterceptor : afterInterceptors) {
                 afterInterceptor.afterCompletion(httpServletRequest, httpServletResponse);
             }
         }
+        CurrentHttpServletHolder.removeAll();
     }
 }
